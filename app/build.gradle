@@ -1,0 +1,59 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'org.mikeneck.graalvm-native-image' version 'v1.2.0'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':api')
+    runtimeOnly project(':impl')
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+sourceCompatibility = JavaVersion.VERSION_11
+
+application {
+    mainClass.set('com.example.app.App')
+    mainModule.set('app')
+}
+
+java {
+    modularity.inferModulePath = true
+}
+
+nativeImage {
+    graalVmHome = System.getProperty('java.home')
+    mainClass = 'com.example.app.App'
+    executableName = 'jmodl'
+    arguments {
+        add '--no-fallback'
+        add '--enable-all-security-services'
+        add '--report-unsupported-elements-at-runtime'
+    }
+}
+
+generateNativeImageConfig {
+    enabled = true
+    byRunningApplicationWithoutArguments()
+}
+
+task execApp(type: Exec, group: 'application', dependsOn: 'nativeImage') {
+    commandLine("$buildDir/native-image/jmodl")
+}
+
+task runJavaApp(type: JavaExec, group: 'application') {
+    modularity.inferModulePath.set(true)
+    mainModule.set('app')
+    setClasspath(sourceSets.main.output + configurations.runtimeClasspath)
+    jvmArgs("-agentlib:native-image-agent=config-output-dir=$buildDir/nc")
+}
+
