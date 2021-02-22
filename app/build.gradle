@@ -50,10 +50,11 @@ task execApp(type: Exec, group: 'application', dependsOn: 'nativeImage') {
     commandLine("$buildDir/native-image/jmodl")
 }
 
-task runJavaApp(type: JavaExec, group: 'application') {
-    modularity.inferModulePath.set(true)
-    mainModule.set('app')
-    setClasspath(sourceSets.main.output + configurations.runtimeClasspath)
-    jvmArgs("-agentlib:native-image-agent=config-output-dir=$buildDir/nc")
+task runByModuleWithAgent(type: JavaExec, group: 'application') {
+  modularity.inferModulePath.set(true)
+  mainModule.set('app')
+  classpath =
+      sourceSets.main.output +
+      configurations.runtimeClasspath
+  jvmArgs("-agentlib:native-image-agent=config-output-dir=$buildDir/$name")
 }
-
